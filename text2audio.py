@@ -1,22 +1,29 @@
-from bark import SAMPLE_RATE, generate_audio, preload_models
-from scipy.io.wavfile import write as write_wav
-from IPython.display import Audio
-import os
+from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+from datasets import load_dataset
+import torch
+import soundfile as sf
+from datasets import load_dataset
+import simpleaudio as sa
 
-# download and load all models
-preload_models()
+processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
+model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
+vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
 
-os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+inputs = processor(text="Hello, my dog is cute.", return_tensors="pt")
 
-# generate audio from text
-text_prompt = """
-     Hello, my name is Suno. And, uh — and I like pizza. [laughs] 
-     But I also have other interests such as playing tic tac toe.
-"""
-audio_array = generate_audio(text_prompt)
+# load xvector containing speaker's voice characteristics from a dataset
+embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+speaker_embeddings = torch.tensor(embeddings_dataset[7306]["xvector"]).unsqueeze(0)
 
-# save audio to disk
-write_wav("bark_generation.wav", SAMPLE_RATE, audio_array)
-  
-# play text in notebook
-Audio(audio_array, rate=SAMPLE_RATE)
+speech = model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
+
+sf.write("speech.wav", speech.numpy(), samplerate=16000)
+
+
+
+# Load a WAV file
+wave_obj = sa.WaveObject.from_wave_file("speech.wav")
+
+# Play the WAV file
+play_obj = wave_obj.play()
+play_obj.wait_done()  # Wait until the sound has finished playing
