@@ -2,8 +2,10 @@ import pyaudio
 import numpy as np
 import audioop
 import time
+import os
 from whisper_transcription import transcribe_speech
-from text_to_speech import text_to_speech, play_audio
+from text_to_speech import text_to_speech, play_audio, is_playing
+from response_generation import generate_response
 
 class LiveTranscriber:
     def __init__(self):
@@ -24,29 +26,54 @@ class LiveTranscriber:
         self.last_speech_time = None
         self.is_speaking = False
         self.play_obj = None
+        #enable microphone
+        self.unmute_microphone()
 
-    def is_audio_playing(self):
-        return play_audio.is_playing(self.play_obj)
+    def mute_microphone(self):
+        # Mute the microphone using amixer (Linux)
+        os.system("amixer set Capture nocap")
+
+    def unmute_microphone(self):
+        # Unmute the microphone using amixer (Linux)
+        os.system("amixer set Capture cap")
 
     def listen_and_transcribe(self):
         print("Listening...")
         try:
             while True:
-                if not self.is_audio_playing():
+                if self.play_obj and self.play_obj.is_playing():
+                    print("Playing response...")
+                    continue
+
+                if not is_playing(self.play_obj):
+                    if not self.is_speaking: print("Listening...") 
                     data = self.stream.read(self.chunk, exception_on_overflow=False)
                     audio_data = np.frombuffer(data, dtype=np.int16)
                     volume = audioop.rms(data, 2)
+
                     if volume > self.silence_threshold:
+                        if not self.is_speaking: print("Speech detected, recording...")
                         self.is_speaking = True
                         self.last_speech_time = time.time()
                         self.audio_buffer = np.append(self.audio_buffer, audio_data)
+                        
                     elif self.is_speaking and (time.time() - self.last_speech_time > self.speech_timeout):
+                        print("Silence detected, transcribing...")
                         self.is_speaking = False
                         result = transcribe_speech(self.audio_buffer)
                         self.audio_buffer = np.array([], dtype=np.int16)
                         if result:
-                            speech_audio = text_to_speech(result)
-                            self.play_obj = play_audio(speech_audio)
+                            response_text = generate_response(result)
+                            if response_text:
+                                print("Received response:", response_text)
+                                self.mute_microphone()  # Mute the microphone before playing the response
+                                speech_audio = text_to_speech(response_text)
+                                self.play_obj = play_audio(speech_audio)
+                                duration = (len(speech_audio) / 16000) + 2
+                                print("Duration:", duration)
+                                time.sleep(duration)
+                                self.unmute_microphone()  # Unmute the microphone after playing the response
+
                 time.sleep(0.01)
         except KeyboardInterrupt:
             print("\nExiting...")
