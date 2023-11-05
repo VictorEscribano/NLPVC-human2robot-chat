@@ -1,23 +1,31 @@
-import torch
-from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+import os
+#os.environ["SUNO_OFFLOAD_CPU"] = "True"
+os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+
+import time
 import soundfile as sf
 import simpleaudio as sa
-from datasets import load_dataset
+from bark import generate_audio, preload_models, SAMPLE_RATE
 
-# Load TTS models and speaker embeddings
-processor = SpeechT5Processor.from_pretrained("microsoft/speecht5_tts")
-tts_model = SpeechT5ForTextToSpeech.from_pretrained("microsoft/speecht5_tts")
-vocoder = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
-embeddings_dataset = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
-speaker_embeddings = torch.tensor(embeddings_dataset[7306]["xvector"]).unsqueeze(0)
+# Set environment variable for using small models if desired
+# os.environ["SUNO_USE_SMALL_MODELS"] = "True"
+
+# Preload models for faster audio generation
+preload_models()
+
+# Define the speaker model to use
+SPEAKER = "v2/es_speaker_0"
 
 def text_to_speech(text):
-    inputs = processor(text=text, return_tensors="pt")
-    generated_speech = tts_model.generate_speech(inputs["input_ids"], speaker_embeddings, vocoder=vocoder)
-    return generated_speech.numpy()
+    # Generate audio from text using the specified speaker model
+    speech_array = generate_audio(text, history_prompt=SPEAKER)
+    return speech_array
 
 def play_audio(audio_data):
-    sf.write("response.wav", audio_data, samplerate=16000)
+    # Save the audio data to a file
+    sf.write("response.wav", audio_data, samplerate=SAMPLE_RATE)
+    # Play the audio file after a short delay
+    time.sleep(2)
     wave_obj = sa.WaveObject.from_wave_file("response.wav")
     play_obj = wave_obj.play()
     return play_obj
