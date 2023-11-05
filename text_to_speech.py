@@ -25,7 +25,7 @@ def play_audio(audio_data):
     # Save the audio data to a file
     sf.write("response.wav", audio_data, samplerate=SAMPLE_RATE)
     # Play the audio file after a short delay
-    time.sleep(2)
+    time.sleep(1)
     wave_obj = sa.WaveObject.from_wave_file("response.wav")
     play_obj = wave_obj.play()
     return play_obj
