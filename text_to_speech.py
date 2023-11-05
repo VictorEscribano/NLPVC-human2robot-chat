@@ -10,11 +10,13 @@ from bark import generate_audio, preload_models, SAMPLE_RATE
 # Set environment variable for using small models if desired
 # os.environ["SUNO_USE_SMALL_MODELS"] = "True"
 
-# Preload models for faster audio generation
-preload_models()
 
-# Define the speaker model to use
-SPEAKER = "v2/es_speaker_0"
+def init_text_to_speech():
+    # Preload models for faster audio generation
+    preload_models()
+
+    # Define the speaker model to use
+    SPEAKER = "v2/es_speaker_0"
 
 def text_to_speech(text):
     # Generate audio from text using the specified speaker model

@@ -4,7 +4,7 @@ import audioop
 import time
 import os
 from whisper_transcription import transcribe_speech
-from text_to_speech import text_to_speech, play_audio, is_playing
+from text_to_speech import text_to_speech, play_audio, is_playing, init_text_to_speech
 from response_generation import generate_response
 
 class LiveTranscriber:
@@ -26,6 +26,10 @@ class LiveTranscriber:
         self.last_speech_time = None
         self.is_speaking = False
         self.play_obj = None
+
+        # Initialize text to speech
+        init_text_to_speech
+        
         #enable microphone
         self.unmute_microphone()
 
