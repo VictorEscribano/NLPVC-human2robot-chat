@@ -1,12 +1,17 @@
 import requests
 import json
 
+'''
+pito_culto
+pito_bro
+'''
+
 def generate_response(prompt):
     # API endpoint URL
     url = "http://localhost:11434/api/generate"
     # Data payload with prompt
     payload = {
-        "model": "pito_bro",
+        "model": "pito_culto",
         "prompt": prompt
     }
     # Convert payload to JSON
