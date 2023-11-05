@@ -16,7 +16,7 @@ class LiveTranscriber:
         self.channels = 1
         self.rate = 16000
         self.chunk = 1024
-        self.silence_threshold = 700
+        self.silence_threshold = 1000
         self.speech_timeout = 1.0
         # Initialize audio stream
         self.stream = self.p.open(format=self.format, channels=self.channels,
@@ -73,6 +73,8 @@ class LiveTranscriber:
                                 print("Duration:", duration)
                                 time.sleep(duration)
                                 self.unmute_microphone()  # Unmute the microphone after playing the response
+                                #clean audio buffer
+                                self.audio_buffer = np.array([], dtype=np.int16)
 
                 time.sleep(0.01)
         except KeyboardInterrupt:

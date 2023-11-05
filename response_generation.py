@@ -6,7 +6,7 @@ def generate_response(prompt):
     url = "http://localhost:11434/api/generate"
     # Data payload with prompt
     payload = {
-        "model": "orca-mini",
+        "model": "pito_bro",
         "prompt": prompt
     }
     # Convert payload to JSON
